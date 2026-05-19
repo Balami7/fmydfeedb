@@ -225,46 +225,64 @@ export default function MarketplacePage() {
   return (
     <div className="min-h-screen bg-white text-black">
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
-        <nav className="max-w-7xl mx-auto px-4 md:px-6 h-[80px] flex items-center justify-between">
-          <Image src="/fmyd.png" alt="FMYD Marketplace" width={100} height={100} className="object-contain" />
+  <nav className="max-w-7xl mx-auto px-4 md:px-6 h-[80px] flex items-center justify-between">
+    
+    {/* Logo Container */}
+    <div className="flex items-center gap-4">
+      <Image 
+        src="/fmyd.png" 
+        alt="FMYD Marketplace" 
+        width={100} 
+        height={100} 
+        className="object-contain" 
+      />
+      <Image 
+        src="/6.jpeg" 
+        alt="Civil Service Conference" 
+        width={100} 
+        height={100} 
+        className="object-contain" 
+      />
+    </div>
 
-          <div className="hidden md:flex items-center gap-7 text-sm font-semibold">
-            {navLinks.map((link) =>
-              link.active ? (
-                <div key={link.title} className="relative py-1 text-emerald-600 font-bold">
-                  <a href={link.href}>{link.title}</a>
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
-                </div>
-              ) : (
-                <a
-                  key={link.title}
-                  href={link.href}
-                  target={link.href.startsWith('http') ? '_blank' : '_self'}
-                  rel="noreferrer"
-                  className="hover:text-emerald-600 transition"
-                >
-                  {link.title}
-                </a>
-              )
-            )}
-          </div>
+    {/* Desktop Navigation */}
+    <div className="hidden md:flex items-center gap-7 text-sm font-semibold">
+      {navLinks.map((link) => link.active ? (
+        <div key={link.title} className="relative py-1 text-emerald-600 font-bold">
+          <a href={link.href}>{link.title}</a>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
+        </div>
+      ) : (
+        <a 
+          key={link.title} 
+          href={link.href} 
+          target={link.href.startsWith('http') ? '_blank' : '_self'} 
+          rel="noreferrer" 
+          className="hover:text-emerald-600 transition"
+        >
+          {link.title}
+        </a>
+      ))}
+    </div>
 
+    {/* Mobile Controls */}
+    <div className="flex items-center gap-4 md:hidden">
+      <button onClick={() => setMobileMenuOpen(true)}>
+        <Menu size={24} />
+      </button>
+      <button onClick={() => setMobileCartOpen(true)} className="relative">
+        <ShoppingCart size={24} />
+        {cart.length > 0 && (
+          <span className="absolute -top-2 -right-2 bg-green-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+            {cart.length}
+          </span>
+        )}
+      </button>
+    </div>
 
-          <div className="flex items-center gap-4 md:hidden">
-            <button onClick={() => setMobileMenuOpen(true)}>
-              <Menu size={24} />
-            </button>
-            <button onClick={() => setMobileCartOpen(true)} className="relative">
-              <ShoppingCart size={24} />
-              {cart.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-green-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
-                  {cart.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </nav>
-      </header>
+  </nav>
+</header>
+
 
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-[300]">

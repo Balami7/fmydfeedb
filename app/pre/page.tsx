@@ -79,19 +79,35 @@ export default function ServicesPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col pt-28">
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 px-4 py-3">
-          <div className="max-w-5xl mx-auto">
-            <div className="relative w-44 h-20">
-              <Image 
-                src="/fmyd.png" 
-                alt="FMYD Logo" 
-                fill 
-                priority 
-                className="object-contain object-left" 
-                sizes="176px" 
-              />
-            </div>
-          </div>
-        </nav>
+  <div className="max-w-5xl mx-auto flex items-center gap-4">
+    
+    {/* First Logo Container */}
+    <div className="relative w-44 h-20">
+      <Image 
+        src="/fmyd.png" 
+        alt="FMYD Logo" 
+        fill 
+        priority 
+        className="object-contain object-left" 
+        sizes="176px" 
+      />
+    </div>
+
+    {/* Second Logo Container */}
+    <div className="relative w-44 h-20">
+      <Image 
+        src="/6.jpeg" 
+        alt="Civil Service Conference" 
+        fill 
+        priority 
+        className="object-contain object-left" 
+        sizes="176px" 
+      />
+    </div>
+
+  </div>
+</nav>
+
 
         <main className="flex-grow max-w-5xl w-full mx-auto py-10 px-4 flex items-center justify-center">
           <div className="text-center">

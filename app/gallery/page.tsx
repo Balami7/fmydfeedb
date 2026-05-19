@@ -50,17 +50,39 @@ export default function GalleryPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-28">
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 px-4 py-3">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center">
-              <div className="relative w-44 h-20">
-                <Image src="/fmyd.png" alt="FMYD Logo" fill className="object-contain object-left" sizes="176px" />
-              </div>
-            </Link>
-            <Link href="/services" className="text-sm font-medium text-gray-600 hover:text-black">
-              ← Back to Services
-            </Link>
-          </div>
-        </nav>
+  <div className="max-w-6xl mx-auto flex items-center justify-between">
+    
+    {/* Clickable Home Link with Both Logos */}
+    <Link href="/" className="flex items-center gap-4">
+      {/* First Logo */}
+      <div className="relative w-44 h-20">
+        <Image 
+          src="/fmyd.png" 
+          alt="FMYD Logo" 
+          fill 
+          className="object-contain object-left" 
+          sizes="176px" 
+        />
+      </div>
+      
+      {/* Second Logo */}
+      <div className="relative w-44 h-20">
+        <Image 
+          src="/6.jpeg" 
+          alt="Civil Service Conference" 
+          fill 
+          className="object-contain object-left" 
+          sizes="176px" 
+        />
+      </div>
+    </Link>
+
+    <Link href="/services" className="text-sm font-medium text-gray-600 hover:text-black">
+      ← Back to Services
+    </Link>
+  </div>
+</nav>
+
 
         <div className="max-w-6xl mx-auto px-4 py-20 flex flex-col items-center justify-center">
           <div className="animate-spin w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full mb-6"></div>

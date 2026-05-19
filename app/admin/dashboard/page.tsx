@@ -38,9 +38,13 @@ interface Registration {
   email: string;
   phone: string;
   age_range: string;
-  sector: string;
-  profession: string;
-  area_of_expertise: string;
+  occupation: string;
+  visitor_category: string;
+  state_of_residence: string;
+  lga: string;
+  home_address: string;
+  gender: string;
+  visit_date: string;
   registration_date: string;
 }
 
@@ -50,10 +54,31 @@ interface SurveyResponse {
   email: string;
   phone: string;
   age_range: string;
-  ministry_feelings: string;
+  occupation: string;
+  visitor_category: string;
+  state_of_residence: string;
+  lga: string;
+  home_address: string;
+  gender: string;
+  visit_date: string;
+  heard_of_ministry: string;
+  aware_programmes: string[];
   familiarity_score: number;
   priority_areas: string[];
-  major_challenge: string;
+  opportunities_opinion: string;
+  most_interesting_programme: string;
+  programme_to_expand: string;
+  improvements: string;
+  new_initiatives: string;
+  biggest_challenge: string;
+  challenge_solutions: string;
+  program_types_interest: string[];
+  would_participate: string;
+  has_disability: string;
+  disability_details: string;
+  accommodation_support: string;
+  anything_else: string;
+  comments: string;
   submitted_at: string;
 }
 
@@ -93,7 +118,9 @@ export default function AdminDashboard() {
   const [galleryCategory, setGalleryCategory] = useState('');
   const [galleryImagePreview, setGalleryImagePreview] = useState('');
 
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<Registration | SurveyResponse | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailType, setDetailType] = useState<'registration' | 'survey'>('registration');
 
   // Export CSV
   const exportToCSV = (data: any[], filename: string) => {
@@ -397,11 +424,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Attendance & Survey Tabs (unchanged) */}
+          {/* Attendance Tab */}
           {activeTab === 'attendance' && (
             <div className="border border-black">
               <div className="p-6 border-b flex justify-between items-center">
-                <h3 className="font-black text-xl">Attendance</h3>
+                <h3 className="font-black text-xl">Attendance & Registrations</h3>
                 <button onClick={() => exportToCSV(registrations, 'attendance')} className="flex items-center gap-2 border px-5 py-2 hover:bg-gray-100">
                   <Download size={18} /> Export CSV
                 </button>
@@ -414,22 +441,26 @@ export default function AdminDashboard() {
                       <th className="p-4 text-left">Email</th>
                       <th className="p-4 text-left">Phone</th>
                       <th className="p-4 text-left">Age Range</th>
+                      <th className="p-4 text-left">Category</th>
+                      <th className="p-4 text-left">State</th>
                       <th className="p-4 text-left">Date</th>
-                      <th className="p-4">Action</th>
+                      <th className="p-4 text-center">View</th>
                     </tr>
                   </thead>
                   <tbody>
                     {registrations.length === 0 ? (
-                      <tr><td colSpan={6} className="p-12 text-center text-gray-500">No registrations yet.</td></tr>
+                      <tr><td colSpan={8} className="p-12 text-center text-gray-500">No registrations yet.</td></tr>
                     ) : registrations.map(reg => (
-                      <tr key={reg.id} className="border-b hover:bg-gray-50">
+                      <tr key={reg.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedItem(reg); setDetailType('registration'); setShowDetailModal(true); }}>
                         <td className="p-4 font-medium">{reg.full_name}</td>
                         <td className="p-4">{reg.email}</td>
                         <td className="p-4">{reg.phone}</td>
                         <td className="p-4">{reg.age_range}</td>
-                        <td className="p-4 text-sm">{reg.registration_date}</td>
-                        <td className="p-4">
-                          <button onClick={() => setSelectedItem(reg)}><Eye size={18} /></button>
+                        <td className="p-4">{reg.visitor_category}</td>
+                        <td className="p-4">{reg.state_of_residence}</td>
+                        <td className="p-4 text-sm">{new Date(reg.registration_date).toLocaleDateString()}</td>
+                        <td className="p-4 text-center">
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedItem(reg); setDetailType('registration'); setShowDetailModal(true); }} className="text-emerald-600 hover:text-emerald-700"><Eye size={18} /></button>
                         </td>
                       </tr>
                     ))}
@@ -442,33 +473,41 @@ export default function AdminDashboard() {
           {activeTab === 'survey' && (
             <div className="border border-black">
               <div className="p-6 border-b flex justify-between items-center">
-                <h3 className="font-black text-xl">Survey Responses</h3>
+                <h3 className="font-black text-xl">Full Survey Responses (Step 1-4)</h3>
                 <button onClick={() => exportToCSV(surveyResponses, 'full_survey')} className="flex items-center gap-2 border px-5 py-2 hover:bg-gray-100">
                   <Download size={18} /> Export CSV
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 sticky top-0">
                     <tr>
-                      <th className="p-4 text-left">Name</th>
-                      <th className="p-4 text-left">Age Range</th>
-                      <th className="p-4 text-left">Familiarity</th>
-                      <th className="p-4 text-left">Submitted</th>
-                      <th className="p-4">Action</th>
+                      <th className="p-3 text-left">Name</th>
+                      <th className="p-3 text-left">Email</th>
+                      <th className="p-3 text-left">Age</th>
+                      <th className="p-3 text-left">Heard of Ministry</th>
+                      <th className="p-3 text-center">Familiarity</th>
+                      <th className="p-3 text-left">Biggest Challenge</th>
+                      <th className="p-3 text-left">Would Participate</th>
+                      <th className="p-3 text-left">Submitted</th>
+                      <th className="p-3 text-center">View</th>
                     </tr>
                   </thead>
                   <tbody>
                     {surveyResponses.length === 0 ? (
-                      <tr><td colSpan={5} className="p-12 text-center text-gray-500">No survey responses yet.</td></tr>
+                      <tr><td colSpan={9} className="p-12 text-center text-gray-500">No survey responses yet.</td></tr>
                     ) : surveyResponses.map(s => (
-                      <tr key={s.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4 font-medium">{s.full_name}</td>
-                        <td className="p-4">{s.age_range}</td>
-                        <td className="p-4">{s.familiarity_score}/5</td>
-                        <td className="p-4 text-sm">{s.submitted_at}</td>
-                        <td className="p-4">
-                          <button onClick={() => setSelectedItem(s)}><Eye size={18} /></button>
+                      <tr key={s.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedItem(s); setDetailType('survey'); setShowDetailModal(true); }}>
+                        <td className="p-3 font-medium">{s.full_name}</td>
+                        <td className="p-3 text-xs">{s.email}</td>
+                        <td className="p-3">{s.age_range}</td>
+                        <td className="p-3 truncate">{s.heard_of_ministry}</td>
+                        <td className="p-3 text-center font-bold">{s.familiarity_score}/5</td>
+                        <td className="p-3 truncate">{s.biggest_challenge}</td>
+                        <td className="p-3">{s.would_participate}</td>
+                        <td className="p-3 text-xs">{new Date(s.submitted_at).toLocaleDateString()}</td>
+                        <td className="p-3 text-center">
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedItem(s); setDetailType('survey'); setShowDetailModal(true); }} className="text-emerald-600 hover:text-emerald-700"><Eye size={18} /></button>
                         </td>
                       </tr>
                     ))}
@@ -604,6 +643,254 @@ export default function AdminDashboard() {
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 font-bold"
                 >
                   {editingGalleryItem ? 'Update Image' : 'Add to Gallery'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal - Registration or Survey */}
+      {showDetailModal && selectedItem && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-black w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black">
+                  {detailType === 'registration' ? 'Registration Details' : 'Full Survey Response'}
+                </h2>
+                <button onClick={() => { setShowDetailModal(false); setSelectedItem(null); }} className="hover:text-red-600"><X size={28} /></button>
+              </div>
+
+              {detailType === 'registration' && selectedItem && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">FULL NAME</p>
+                      <p className="text-lg font-semibold">{selectedItem.full_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">EMAIL</p>
+                      <p className="text-lg">{selectedItem.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">PHONE</p>
+                      <p className="text-lg">{selectedItem.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">AGE RANGE</p>
+                      <p className="text-lg">{selectedItem.age_range}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">GENDER</p>
+                      <p className="text-lg">{(selectedItem as Registration).gender}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">OCCUPATION</p>
+                      <p className="text-lg">{(selectedItem as Registration).occupation}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">VISITOR CATEGORY</p>
+                      <p className="text-lg">{(selectedItem as Registration).visitor_category}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">STATE OF RESIDENCE</p>
+                      <p className="text-lg">{(selectedItem as Registration).state_of_residence}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">LGA</p>
+                      <p className="text-lg">{(selectedItem as Registration).lga}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">VISIT DATE</p>
+                      <p className="text-lg">{new Date((selectedItem as Registration).visit_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold">REGISTRATION DATE</p>
+                      <p className="text-lg">{new Date((selectedItem as Registration).registration_date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 font-bold">HOME ADDRESS</p>
+                    <p className="text-lg">{(selectedItem as Registration).home_address}</p>
+                  </div>
+                </div>
+              )}
+
+              {detailType === 'survey' && selectedItem && (
+                <div className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded">
+                    <p className="text-xs font-bold text-blue-900 mb-3">STEP 1: VISITOR INFORMATION</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Full Name</p>
+                        <p className="text-sm">{selectedItem.full_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Email</p>
+                        <p className="text-sm">{selectedItem.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Phone</p>
+                        <p className="text-sm">{selectedItem.phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Age Range</p>
+                        <p className="text-sm">{selectedItem.age_range}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Gender</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).gender}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Occupation</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).occupation}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Visitor Category</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).visitor_category}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">State of Residence</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).state_of_residence}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">LGA</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).lga}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Visit Date</p>
+                        <p className="text-sm">{new Date((selectedItem as SurveyResponse).visit_date).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-600 font-bold">Home Address</p>
+                      <p className="text-sm">{(selectedItem as SurveyResponse).home_address}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 p-4 rounded">
+                    <p className="text-xs font-bold text-green-900 mb-3">STEP 2: AWARENESS</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Heard of Ministry</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).heard_of_ministry}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Familiarity Score</p>
+                        <p className="text-lg font-bold text-emerald-600">{(selectedItem as SurveyResponse).familiarity_score}/5</p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-600 font-bold mb-2">Aware Programmes</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray((selectedItem as SurveyResponse).aware_programmes) && (selectedItem as SurveyResponse).aware_programmes.map((prog: string, i: number) => (
+                          <span key={i} className="bg-green-200 text-green-900 text-xs px-3 py-1 rounded">{prog}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-600 font-bold mb-2">Priority Areas (Max 3)</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray((selectedItem as SurveyResponse).priority_areas) && (selectedItem as SurveyResponse).priority_areas.map((area: string, i: number) => (
+                          <span key={i} className="bg-emerald-200 text-emerald-900 text-xs px-3 py-1 rounded">{area}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
+                    <p className="text-xs font-bold text-yellow-900 mb-3">STEP 3: FEEDBACK</p>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Opinion on Opportunities</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).opportunities_opinion}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Most Interesting Programme</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).most_interesting_programme}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Programme to Expand</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).programme_to_expand}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Suggested Improvements</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).improvements}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">New Initiatives Ideas</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).new_initiatives}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Biggest Challenge</p>
+                        <p className="text-sm font-semibold">{(selectedItem as SurveyResponse).biggest_challenge}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Recommended Solutions</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).challenge_solutions}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold mb-2">Program Types of Interest</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.isArray((selectedItem as SurveyResponse).program_types_interest) && (selectedItem as SurveyResponse).program_types_interest.map((type: string, i: number) => (
+                            <span key={i} className="bg-yellow-200 text-yellow-900 text-xs px-3 py-1 rounded">{type}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-50 border border-purple-200 p-4 rounded">
+                    <p className="text-xs font-bold text-purple-900 mb-3">STEP 4: INCLUSION & FEEDBACK</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Would Participate</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).would_participate}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold">Has Disability</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).has_disability}</p>
+                      </div>
+                    </div>
+                    {(selectedItem as SurveyResponse).disability_details && (
+                      <div className="mt-4">
+                        <p className="text-xs text-gray-600 font-bold">Disability Details</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).disability_details}</p>
+                      </div>
+                    )}
+                    {(selectedItem as SurveyResponse).accommodation_support && (
+                      <div className="mt-4">
+                        <p className="text-xs text-gray-600 font-bold">Accommodation Support</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).accommodation_support}</p>
+                      </div>
+                    )}
+                    {(selectedItem as SurveyResponse).anything_else && (
+                      <div className="mt-4">
+                        <p className="text-xs text-gray-600 font-bold">Anything Else</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).anything_else}</p>
+                      </div>
+                    )}
+                    {(selectedItem as SurveyResponse).comments && (
+                      <div className="mt-4">
+                        <p className="text-xs text-gray-600 font-bold">Comments</p>
+                        <p className="text-sm">{(selectedItem as SurveyResponse).comments}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-right text-xs text-gray-500">
+                    Submitted: {new Date((selectedItem as SurveyResponse).submitted_at).toLocaleString()}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-8 flex justify-end">
+                <button 
+                  onClick={() => { setShowDetailModal(false); setSelectedItem(null); }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 font-bold"
+                >
+                  Close
                 </button>
               </div>
             </div>
