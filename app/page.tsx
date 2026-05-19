@@ -232,7 +232,7 @@ export default function SurveyPage() {
 
   // New Age Ranges
   const ageOptions = [
-    { value: "15-35", label: "15 – 35 (Youth)" },
+    { value: "15-35", label: "15 – 35" },
     { value: "36-44", label: "36 – 44" },
     { value: "45-60", label: "45 – 60" },
   ];

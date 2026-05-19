@@ -24,6 +24,14 @@ interface Service {
   external: boolean;
 }
 
+interface GalleryItem {
+  id: number;
+  src: string;
+  alt: string;
+  caption: string;
+  category?: string;
+}
+
 interface Registration { 
   id: number;
   full_name: string;
@@ -50,11 +58,12 @@ interface SurveyResponse {
 }
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'services' | 'attendance' | 'survey'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'services' | 'gallery' | 'attendance' | 'survey'>('dashboard');
 
   // Data States
   const [products, setProducts] = useState<Product[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -76,6 +85,13 @@ export default function AdminDashboard() {
   const [serviceImagePreview, setServiceImagePreview] = useState('');
   const [serviceHref, setServiceHref] = useState('');
   const [serviceExternal, setServiceExternal] = useState(false);
+
+  // Gallery Modal
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null);
+  const [galleryCaption, setGalleryCaption] = useState('');
+  const [galleryCategory, setGalleryCategory] = useState('');
+  const [galleryImagePreview, setGalleryImagePreview] = useState('');
 
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
@@ -147,6 +163,57 @@ export default function AdminDashboard() {
     setServiceTitle(''); setServiceDescription(''); setServiceImagePreview(''); setServiceHref(''); setServiceExternal(false); setEditingService(null); setShowServiceModal(false);
   };
 
+  // Gallery Functions
+  const openGalleryModal = () => {
+    resetGalleryForm();
+    setShowGalleryModal(true);
+  };
+
+  const handleEditGallery = (item: GalleryItem) => {
+    setEditingGalleryItem(item);
+    setGalleryCaption(item.caption);
+    setGalleryCategory(item.category || '');
+    setGalleryImagePreview(item.src);
+    setShowGalleryModal(true);
+  };
+
+  const handleDeleteGallery = (id: number) => {
+    if (confirm("Delete this gallery image?")) {
+      setGallery(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleSaveGallery = () => {
+    if (!galleryCaption || !galleryImagePreview) {
+      return alert("Caption and image are required");
+    }
+
+    if (editingGalleryItem) {
+      setGallery(prev => prev.map(item =>
+        item.id === editingGalleryItem.id
+          ? { ...item, caption: galleryCaption, category: galleryCategory || undefined, src: galleryImagePreview }
+          : item
+      ));
+    } else {
+      setGallery(prev => [...prev, {
+        id: Date.now(),
+        src: galleryImagePreview,
+        alt: galleryCaption,
+        caption: galleryCaption,
+        category: galleryCategory || undefined,
+      }]);
+    }
+    resetGalleryForm();
+  };
+
+  const resetGalleryForm = () => {
+    setGalleryCaption('');
+    setGalleryCategory('');
+    setGalleryImagePreview('');
+    setEditingGalleryItem(null);
+    setShowGalleryModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-black">
       <div className="flex">
@@ -162,6 +229,7 @@ export default function AdminDashboard() {
               { id: 'orders', label: 'Orders', icon: <ShoppingCart size={20} /> },
               { id: 'products', label: 'Products', icon: <Package size={20} /> },
               { id: 'services', label: 'Services', icon: <Package size={20} /> },
+              { id: 'gallery', label: 'Gallery', icon: <Package size={20} /> },
               { id: 'attendance', label: 'Attendance', icon: <Users size={20} /> },
               { id: 'survey', label: 'Survey Responses', icon: <Users size={20} /> },
             ].map((item) => (
@@ -186,6 +254,7 @@ export default function AdminDashboard() {
               {activeTab === 'orders' && 'Marketplace Orders'}
               {activeTab === 'products' && 'Products Management'}
               {activeTab === 'services' && 'Services Management'}
+              {activeTab === 'gallery' && 'Gallery Management'}
               {activeTab === 'attendance' && 'Attendance'}
               {activeTab === 'survey' && 'Full Survey Responses'}
             </h1>
@@ -199,6 +268,7 @@ export default function AdminDashboard() {
                 { title: "Full Survey Responses", value: surveyResponses.length },
                 { title: "Marketplace Orders", value: orders.length },
                 { title: "Active Products", value: products.length },
+                { title: "Gallery Images", value: gallery.length },
               ].map((stat, i) => (
                 <div key={i} className="border border-black p-6 bg-white">
                   <h3 className="text-sm font-semibold">{stat.title}</h3>
@@ -217,7 +287,7 @@ export default function AdminDashboard() {
                   <Download size={18} /> Export CSV
                 </button>
               </div>
-              <p className="p-20 text-center text-gray-500">Orders placed through the marketplace and checkout will appear here.</p>
+              <p className="p-20 text-center text-gray-500">Orders placed through the marketplace will appear here.</p>
             </div>
           )}
 
@@ -272,7 +342,62 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Attendance Tab - Step 1 Only */}
+          {/* ====================== GALLERY TAB ====================== */}
+          {activeTab === 'gallery' && (
+            <div>
+              <div className="flex justify-between mb-6">
+                <h2 className="text-2xl font-black">Gallery Management</h2>
+                <button 
+                  onClick={openGalleryModal} 
+                  className="bg-emerald-600 text-white px-6 py-3 font-semibold hover:bg-emerald-700"
+                >
+                  + Add Image
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {gallery.length === 0 ? (
+                  <p className="col-span-full text-center py-12 text-gray-500">
+                    No images in gallery yet. Add some above.
+                  </p>
+                ) : (
+                  gallery.map(item => (
+                    <div key={item.id} className="border border-black bg-white overflow-hidden">
+                      <img 
+                        src={item.src} 
+                        alt={item.caption} 
+                        className="w-full h-48 object-cover border-b border-black" 
+                      />
+                      <div className="p-4">
+                        <p className="font-medium line-clamp-2 mb-2">{item.caption}</p>
+                        {item.category && (
+                          <span className="inline-block text-xs bg-gray-100 px-3 py-1 rounded-full mb-3">
+                            {item.category}
+                          </span>
+                        )}
+                        <div className="flex gap-3 mt-4">
+                          <button 
+                            onClick={() => handleEditGallery(item)}
+                            className="flex-1 border py-2 hover:bg-gray-100 flex items-center justify-center gap-2"
+                          >
+                            <Edit2 size={16} /> Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteGallery(item.id)}
+                            className="flex-1 border border-red-600 text-red-600 py-2 hover:bg-red-50 flex items-center justify-center gap-2"
+                          >
+                            <Trash2 size={16} /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Attendance & Survey Tabs (unchanged) */}
           {activeTab === 'attendance' && (
             <div className="border border-black">
               <div className="p-6 border-b flex justify-between items-center">
@@ -314,7 +439,6 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Survey Tab - Full Data */}
           {activeTab === 'survey' && (
             <div className="border border-black">
               <div className="p-6 border-b flex justify-between items-center">
@@ -356,7 +480,7 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* ================= PRODUCT MODAL ================= */}
+      {/* Product Modal */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-black w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -365,7 +489,7 @@ export default function AdminDashboard() {
                 <h2 className="text-2xl font-black">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
                 <button onClick={resetProductForm}><X size={28} /></button>
               </div>
-
+              {/* Product form content (same as before) */}
               <div className="space-y-5">
                 <input type="text" placeholder="Product Name *" value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full border border-black p-4" />
                 <input type="text" placeholder="Category *" value={productCategory} onChange={(e) => setProductCategory(e.target.value)} className="w-full border border-black p-4" />
@@ -391,7 +515,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ================= SERVICE MODAL ================= */}
+      {/* Service Modal */}
       {showServiceModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-black w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -423,6 +547,63 @@ export default function AdminDashboard() {
 
                 <button onClick={handleSaveService} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 font-bold">
                   {editingService ? 'Update Service' : 'Save Service'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery Modal */}
+      {showGalleryModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-black w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex justify-between mb-6">
+                <h2 className="text-2xl font-black">
+                  {editingGalleryItem ? 'Edit Gallery Image' : 'Add New Gallery Image'}
+                </h2>
+                <button onClick={resetGalleryForm}><X size={28} /></button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block mb-2 font-medium">Image</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setGalleryImagePreview(URL.createObjectURL(file));
+                    }} 
+                    className="w-full border border-black p-3" 
+                  />
+                  {galleryImagePreview && (
+                    <img src={galleryImagePreview} alt="preview" className="mt-4 h-48 object-cover border border-black" />
+                  )}
+                </div>
+
+                <input 
+                  type="text" 
+                  placeholder="Caption *" 
+                  value={galleryCaption} 
+                  onChange={(e) => setGalleryCaption(e.target.value)} 
+                  className="w-full border border-black p-4" 
+                />
+
+                <input 
+                  type="text" 
+                  placeholder="Category (optional)" 
+                  value={galleryCategory} 
+                  onChange={(e) => setGalleryCategory(e.target.value)} 
+                  className="w-full border border-black p-4" 
+                />
+
+                <button 
+                  onClick={handleSaveGallery} 
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 font-bold"
+                >
+                  {editingGalleryItem ? 'Update Image' : 'Add to Gallery'}
                 </button>
               </div>
             </div>
