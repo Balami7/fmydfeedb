@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
       </div>
-      <a href="/" className="text-black hover:text-emerald-500 text-[10px] uppercase tracking-widest mt-4 transition-colors">← Back to store</a>
+      <a href="/marketplace" className="text-black hover:text-emerald-500 text-[10px] uppercase tracking-widest mt-4 transition-colors">← Back to store</a>
     </div>
   );
 }
