@@ -21,7 +21,12 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (res.ok) return router.push("/admin/dashboard");
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        const token = data?.token as string | undefined;
+        if (token) localStorage.setItem("admin_token", token);
+        return router.push("/admin/dashboard");
+      }
       
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Login failed");

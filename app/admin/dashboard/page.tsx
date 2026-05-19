@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users, ShoppingCart, BarChart3, Package, Bell, Search, LogOut,
   X, Edit2, Trash2, Download, Eye
 } from 'lucide-react';
+import { useRouter } from "next/navigation";
 
 interface Product {
   id: number;
@@ -83,7 +84,32 @@ interface SurveyResponse {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'services' | 'gallery' | 'attendance' | 'survey'>('dashboard');
+
+  useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.replace("/admin/login");
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch("/api/admin/dashboard", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+      .then((res) => {
+        if (res.status === 401) {
+          localStorage.removeItem("admin_token");
+          router.replace("/admin/login");
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [router]);
 
   // Data States
   const [products, setProducts] = useState<Product[]>([]);

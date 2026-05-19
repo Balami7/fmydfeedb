@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase (not needed for version control)
+# Local database files are only for SQLite - using Supabase for this project
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
