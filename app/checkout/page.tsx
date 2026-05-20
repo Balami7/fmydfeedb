@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { ArrowLeft, CheckCircle, Upload, X } from 'lucide-react';
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -18,6 +18,7 @@ export default function CheckoutPage() {
   const [deliveryZone, setDeliveryZone] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export default function CheckoutPage() {
   };
 
   const handleSubmitOrder = async () => {
-    if (!fullName || !phoneNumber || !deliveryAddress || !deliveryZone || !paymentMethod) {
+    if (!fullName || !email || !phoneNumber || !deliveryAddress || !deliveryZone || !paymentMethod) {
       alert("Please fill all required fields");
       return;
     }
@@ -67,19 +68,26 @@ export default function CheckoutPage() {
       alert("Please upload proof of payment");
       return;
     }
+    if (cart.length === 0) {
+      alert("Your cart is empty");
+      return;
+    }
 
     setIsSubmitting(true);
 
     const formData = new FormData();
-    formData.append('fullName', fullName);
-    formData.append('phoneNumber', phoneNumber);
-    formData.append('deliveryZone', deliveryZone);
-    formData.append('deliveryAddress', deliveryAddress);
-    formData.append('paymentMethod', paymentMethod);
-    formData.append('subtotal', subtotal.toString());
+    formData.append('customerName', fullName);
+    formData.append('email', email);
+    formData.append('phone', phoneNumber);
+    formData.append('deliveryZone', `${deliveryZone} | ${deliveryAddress} | ${paymentMethod}`);
     formData.append('deliveryFee', deliveryFee.toString());
-    formData.append('total', total.toString());
-    formData.append('items', JSON.stringify(cart));
+    formData.append('items', JSON.stringify(
+      cart.map((item) => ({
+        productId: String(item.id),
+        quantity: item.quantity,
+        price: item.price,
+      }))
+    ));
 
     if (paymentProof) {
       formData.append('paymentProof', paymentProof);
@@ -156,6 +164,14 @@ export default function CheckoutPage() {
                   placeholder="Full Name *"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  className="w-full border border-black p-3 outline-none"
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email *"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full border border-black p-3 outline-none"
                   required
                 />

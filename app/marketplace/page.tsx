@@ -5,12 +5,13 @@ import Image from 'next/image';
 import { ShoppingCart, Search, X, Menu } from 'lucide-react';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
   category: string;
   description: string;
+  quantity: number;
 }
 
 interface CartItem extends Product {
@@ -53,8 +54,17 @@ export default function MarketplacePage() {
 
         if (!response.ok) throw new Error('Failed to load products');
 
-        const data: Product[] = await response.json();
-        setProducts(data);
+        const data: any[] = await response.json();
+        const mapped: Product[] = (data || []).map((p) => ({
+          id: String(p.id),
+          name: p.name || '',
+          price: Number(p.price) || 0,
+          image: p.image || '',
+          category: p.category || '',
+          description: p.description || '',
+          quantity: Number(p.quantity) || 0,
+        }));
+        setProducts(mapped);
       } catch (err) {
         console.error(err);
         setError('Unable to load products. Please try again later.');
@@ -89,7 +99,7 @@ export default function MarketplacePage() {
     });
   };
 
-  const updateQuantity = (id: number, type: 'plus' | 'minus') => {
+  const updateQuantity = (id: string, type: 'plus' | 'minus') => {
     setCart((prev) =>
       prev
         .map((item) => {

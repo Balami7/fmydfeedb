@@ -32,8 +32,14 @@ export default function GalleryPage() {
           throw new Error('Failed to fetch gallery');
         }
 
-        const data: GalleryItem[] = await response.json();
-        setGalleryItems(data);
+        const data: any[] = await response.json();
+        const mapped: GalleryItem[] = (data || []).map((g) => ({
+          id: String(g.id),
+          src: g.image || '',
+          alt: g.title || '',
+          caption: g.title || '',
+        }));
+        setGalleryItems(mapped);
       } catch (err) {
         console.error('Error fetching gallery:', err);
         setError('Unable to load gallery at the moment. Please try again.');

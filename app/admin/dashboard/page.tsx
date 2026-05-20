@@ -8,33 +8,31 @@ import {
 import { useRouter } from "next/navigation";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   category: string;
   price: number;
+  quantity: number;
   description: string;
   image: string;
 }
 
 interface Service {
-  id: number;
+  id: string;
   title: string;
   description: string;
   imageSrc: string;
-  href: string;
-  external: boolean;
 }
 
 interface GalleryItem {
-  id: number;
+  id: string;
   src: string;
   alt: string;
   caption: string;
-  category?: string;
 }
 
-interface Registration { 
-  id: number;
+interface Registration {
+  id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -49,8 +47,8 @@ interface Registration {
   registration_date: string;
 }
 
-interface SurveyResponse { 
-  id: number;
+interface SurveyResponse {
+  id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -83,33 +81,34 @@ interface SurveyResponse {
   submitted_at: string;
 }
 
+function parseMaybeJson<T>(v: unknown): T | null {
+  if (typeof v !== "string" || !v) return null;
+  try { return JSON.parse(v) as T; } catch { return null; }
+}
+
+function toArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String);
+  const parsed = parseMaybeJson<unknown>(v);
+  if (Array.isArray(parsed)) return parsed.map(String);
+  if (typeof v === "string" && v) return [v];
+  return [];
+}
+
+function fmtDate(v: unknown): string {
+  if (!v) return "—";
+  const d = new Date(String(v));
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
+}
+
+function fmtDateTime(v: unknown): string {
+  if (!v) return "—";
+  const d = new Date(String(v));
+  return isNaN(d.getTime()) ? "—" : d.toLocaleString();
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'services' | 'gallery' | 'attendance' | 'survey'>('dashboard');
-
-  useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) {
-      router.replace("/admin/login");
-      return;
-    }
-
-    const controller = new AbortController();
-    fetch("/FMYDHUB/api/admin/dashboard", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (res.status === 401) {
-          localStorage.removeItem("admin_token");
-          router.replace("/admin/login");
-        }
-      })
-      .catch(() => {});
-
-    return () => controller.abort();
-  }, [router]);
 
   // Data States
   const [products, setProducts] = useState<Product[]>([]);
@@ -125,7 +124,9 @@ export default function AdminDashboard() {
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
   const [productPrice, setProductPrice] = useState('');
+  const [productQuantity, setProductQuantity] = useState('');
   const [productDescription, setProductDescription] = useState('');
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState('');
 
   // Service Modal
@@ -133,16 +134,122 @@ export default function AdminDashboard() {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceTitle, setServiceTitle] = useState('');
   const [serviceDescription, setServiceDescription] = useState('');
+  const [serviceImageFile, setServiceImageFile] = useState<File | null>(null);
   const [serviceImagePreview, setServiceImagePreview] = useState('');
-  const [serviceHref, setServiceHref] = useState('');
-  const [serviceExternal, setServiceExternal] = useState(false);
 
   // Gallery Modal
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null);
   const [galleryCaption, setGalleryCaption] = useState('');
-  const [galleryCategory, setGalleryCategory] = useState('');
+  const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
   const [galleryImagePreview, setGalleryImagePreview] = useState('');
+
+  const authToken = (): string | null =>
+    typeof window === "undefined" ? null : localStorage.getItem("admin_token");
+
+  const loadDashboard = async () => {
+    const token = authToken();
+    if (!token) {
+      router.replace("/admin/login");
+      return;
+    }
+    try {
+      const res = await fetch("/FMYDHUB/api/admin/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (res.status === 401) {
+        localStorage.removeItem("admin_token");
+        router.replace("/admin/login");
+        return;
+      }
+      if (!res.ok) return;
+      const d = await res.json();
+
+      setProducts((d.products || []).map((p: any) => ({
+        id: String(p.id),
+        name: p.name || "",
+        category: p.category || "",
+        price: Number(p.price) || 0,
+        quantity: Number(p.quantity) || 0,
+        description: p.description || "",
+        image: p.image || "",
+      })));
+
+      setServices((d.services || []).map((s: any) => ({
+        id: String(s.id),
+        title: s.name || "",
+        description: s.description || "",
+        imageSrc: s.image || "",
+      })));
+
+      setGallery((d.galleries || []).map((g: any) => ({
+        id: String(g.id),
+        src: g.image || "",
+        alt: g.title || "",
+        caption: g.title || "",
+      })));
+
+      setRegistrations((d.registrations || []).map((r: any) => ({
+        id: String(r.id),
+        full_name: r.name || "",
+        email: r.email || "",
+        phone: r.phone || "",
+        age_range: r.age || "",
+        occupation: r.occupation || "",
+        visitor_category: r.visitor_category || "",
+        state_of_residence: r.state || "",
+        lga: r.lga || "",
+        home_address: r.address || "",
+        gender: r.gender || "",
+        visit_date: r.visit_date || "",
+        registration_date: r.createdAt || "",
+      })));
+
+      setSurveyResponses((d.surveyResponses || []).map((s: any) => ({
+        id: String(s.id),
+        full_name: s.full_name || "",
+        email: s.email || "",
+        phone: s.phone || "",
+        age_range: s.age_range || "",
+        occupation: s.occupation || "",
+        visitor_category: s.visitor_category || "",
+        state_of_residence: s.state_of_residence || "",
+        lga: s.lga || "",
+        home_address: s.home_address || "",
+        gender: s.gender || "",
+        visit_date: s.visit_date || "",
+        heard_of_ministry: s.heard_of_ministry || "",
+        aware_programmes: toArray(s.aware_programmes),
+        familiarity_score: Number(s.familiarity_score) || 0,
+        priority_areas: toArray(s.priority_areas),
+        opportunities_opinion: s.opportunities_opinion || "",
+        most_interesting_programme: s.most_interesting_programme || "",
+        programme_to_expand: s.programme_to_expand || "",
+        improvements: s.improvements || "",
+        new_initiatives: s.new_initiatives || "",
+        biggest_challenge: s.biggest_challenge || "",
+        challenge_solutions: s.challenge_solutions || "",
+        program_types_interest: toArray(s.program_types_interest),
+        would_participate: s.would_participate || "",
+        has_disability: s.has_disability || "",
+        disability_details: s.disability_details || "",
+        accommodation_support: s.accommodation_support || "",
+        anything_else: s.anything_else || "",
+        comments: s.comments || "",
+        submitted_at: s.submitted_at || s.createdAt || "",
+      })));
+
+      setOrders(d.orders || []);
+    } catch (e) {
+      console.error("Dashboard load failed", e);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [selectedItem, setSelectedItem] = useState<Registration | SurveyResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -169,24 +276,53 @@ export default function AdminDashboard() {
     setProductName(p.name);
     setProductCategory(p.category);
     setProductPrice(p.price.toString());
+    setProductQuantity(p.quantity.toString());
     setProductDescription(p.description);
+    setProductImageFile(null);
     setProductImagePreview(p.image);
     setShowProductModal(true);
   };
-  const handleDeleteProduct = (id: number) => {
-    if (confirm("Delete this product?")) setProducts(prev => prev.filter(p => p.id !== id));
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm("Delete this product?")) return;
+    const token = authToken();
+    const res = await fetch(`/FMYDHUB/api/products?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Delete failed: ${data.error || res.status}`);
+      return;
+    }
+    await loadDashboard();
   };
-  const handleSaveProduct = () => {
-    if (!productName || !productCategory || !productPrice) return alert("Please fill all required fields");
-    if (editingProduct) {
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, name: productName, category: productCategory, price: Number(productPrice), description: productDescription, image: productImagePreview || p.image } : p));
-    } else {
-      setProducts(prev => [...prev, { id: Date.now(), name: productName, category: productCategory, price: Number(productPrice), description: productDescription, image: productImagePreview || '/placeholder.jpg' }]);
+  const handleSaveProduct = async () => {
+    if (!productName || !productPrice) return alert("Please fill name and price");
+    const token = authToken();
+    const fd = new FormData();
+    if (editingProduct) fd.append("id", editingProduct.id);
+    fd.append("name", productName);
+    fd.append("description", productDescription || "");
+    fd.append("price", String(Number(productPrice) || 0));
+    fd.append("quantity", String(Number(productQuantity) || 0));
+    if (productImageFile) fd.append("image", productImageFile);
+    const res = await fetch("/FMYDHUB/api/products", {
+      method: editingProduct ? "PUT" : "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Save failed: ${data.error || res.status}`);
+      return;
     }
     resetProductForm();
+    await loadDashboard();
   };
   const resetProductForm = () => {
-    setProductName(''); setProductCategory(''); setProductPrice(''); setProductDescription(''); setProductImagePreview(''); setEditingProduct(null); setShowProductModal(false);
+    setProductName(''); setProductCategory(''); setProductPrice(''); setProductQuantity('');
+    setProductDescription(''); setProductImageFile(null); setProductImagePreview('');
+    setEditingProduct(null); setShowProductModal(false);
   };
 
   // Service Functions
@@ -195,73 +331,105 @@ export default function AdminDashboard() {
     setEditingService(s);
     setServiceTitle(s.title);
     setServiceDescription(s.description);
+    setServiceImageFile(null);
     setServiceImagePreview(s.imageSrc);
-    setServiceHref(s.href);
-    setServiceExternal(s.external);
     setShowServiceModal(true);
   };
-  const handleDeleteService = (id: number) => {
-    if (confirm("Delete this service?")) setServices(prev => prev.filter(s => s.id !== id));
+  const handleDeleteService = async (id: string) => {
+    if (!confirm("Delete this service?")) return;
+    const token = authToken();
+    const res = await fetch(`/FMYDHUB/api/services?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Delete failed: ${data.error || res.status}`);
+      return;
+    }
+    await loadDashboard();
   };
-  const handleSaveService = () => {
+  const handleSaveService = async () => {
     if (!serviceTitle) return alert("Service title is required");
-    if (editingService) {
-      setServices(prev => prev.map(s => s.id === editingService.id ? { ...s, title: serviceTitle, description: serviceDescription, imageSrc: serviceImagePreview || s.imageSrc, href: serviceHref, external: serviceExternal } : s));
-    } else {
-      setServices(prev => [...prev, { id: Date.now(), title: serviceTitle, description: serviceDescription, imageSrc: serviceImagePreview || '/placeholder.jpg', href: serviceHref, external: serviceExternal }]);
+    const token = authToken();
+    const fd = new FormData();
+    if (editingService) fd.append("id", editingService.id);
+    fd.append("name", serviceTitle);
+    fd.append("description", serviceDescription || "");
+    if (serviceImageFile) fd.append("image", serviceImageFile);
+    const res = await fetch("/FMYDHUB/api/services", {
+      method: editingService ? "PUT" : "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Save failed: ${data.error || res.status}`);
+      return;
     }
     resetServiceForm();
+    await loadDashboard();
   };
   const resetServiceForm = () => {
-    setServiceTitle(''); setServiceDescription(''); setServiceImagePreview(''); setServiceHref(''); setServiceExternal(false); setEditingService(null); setShowServiceModal(false);
+    setServiceTitle(''); setServiceDescription(''); setServiceImageFile(null);
+    setServiceImagePreview(''); setEditingService(null); setShowServiceModal(false);
   };
 
   // Gallery Functions
-  const openGalleryModal = () => {
-    resetGalleryForm();
-    setShowGalleryModal(true);
-  };
+  const openGalleryModal = () => { resetGalleryForm(); setShowGalleryModal(true); };
 
   const handleEditGallery = (item: GalleryItem) => {
     setEditingGalleryItem(item);
     setGalleryCaption(item.caption);
-    setGalleryCategory(item.category || '');
+    setGalleryImageFile(null);
     setGalleryImagePreview(item.src);
     setShowGalleryModal(true);
   };
 
-  const handleDeleteGallery = (id: number) => {
-    if (confirm("Delete this gallery image?")) {
-      setGallery(prev => prev.filter(item => item.id !== id));
+  const handleDeleteGallery = async (id: string) => {
+    if (!confirm("Delete this gallery image?")) return;
+    const token = authToken();
+    const res = await fetch(`/FMYDHUB/api/gallery?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Delete failed: ${data.error || res.status}`);
+      return;
     }
+    await loadDashboard();
   };
 
-  const handleSaveGallery = () => {
-    if (!galleryCaption || !galleryImagePreview) {
-      return alert("Caption and image are required");
-    }
-
+  const handleSaveGallery = async () => {
     if (editingGalleryItem) {
-      setGallery(prev => prev.map(item =>
-        item.id === editingGalleryItem.id
-          ? { ...item, caption: galleryCaption, category: galleryCategory || undefined, src: galleryImagePreview }
-          : item
-      ));
-    } else {
-      setGallery(prev => [...prev, {
-        id: Date.now(),
-        src: galleryImagePreview,
-        alt: galleryCaption,
-        caption: galleryCaption,
-        category: galleryCategory || undefined,
-      }]);
+      alert("Gallery edit is not supported — delete and re-add.");
+      return;
+    }
+    if (!galleryCaption || !galleryImageFile) {
+      return alert("Caption and image are both required");
+    }
+    const token = authToken();
+    const fd = new FormData();
+    fd.append("title", galleryCaption);
+    fd.append("image", galleryImageFile);
+    const res = await fetch("/FMYDHUB/api/gallery", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Save failed: ${data.error || res.status}`);
+      return;
     }
     resetGalleryForm();
+    await loadDashboard();
   };
 
   const resetGalleryForm = () => {
     setGalleryCaption('');
-    setGalleryCategory('');
+    setGalleryImageFile(null);
     setGalleryImagePreview('');
     setEditingGalleryItem(null);
     setShowGalleryModal(false);
@@ -335,12 +503,43 @@ export default function AdminDashboard() {
           {activeTab === 'orders' && (
             <div className="border border-black">
               <div className="p-6 border-b flex justify-between">
-                <h3 className="font-black text-xl">Marketplace Order</h3>
+                <h3 className="font-black text-xl">Marketplace Orders</h3>
                 <button onClick={() => exportToCSV(orders, 'orders')} className="flex items-center gap-2 border px-5 py-2 hover:bg-gray-100">
                   <Download size={18} /> Export CSV
                 </button>
               </div>
-              <p className="p-20 text-center text-gray-500">Orders placed through the marketplace will appear here.</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="p-3 text-left">Customer</th>
+                      <th className="p-3 text-left">Email</th>
+                      <th className="p-3 text-left">Phone</th>
+                      <th className="p-3 text-left">Zone</th>
+                      <th className="p-3 text-right">Delivery Fee</th>
+                      <th className="p-3 text-right">Items</th>
+                      <th className="p-3 text-left">Status</th>
+                      <th className="p-3 text-left">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.length === 0 ? (
+                      <tr><td colSpan={8} className="p-12 text-center text-gray-500">No orders yet.</td></tr>
+                    ) : orders.map((o: any) => (
+                      <tr key={o.id} className="border-b hover:bg-gray-50">
+                        <td className="p-3 font-medium">{o.customerName}</td>
+                        <td className="p-3 text-xs">{o.email}</td>
+                        <td className="p-3">{o.phone}</td>
+                        <td className="p-3">{o.deliveryZone}</td>
+                        <td className="p-3 text-right">₦{Number(o.deliveryFee || 0).toLocaleString()}</td>
+                        <td className="p-3 text-right">{(o.items || []).length}</td>
+                        <td className="p-3">{o.status}</td>
+                        <td className="p-3 text-xs">{fmtDate(o.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -423,11 +622,6 @@ export default function AdminDashboard() {
                       />
                       <div className="p-4">
                         <p className="font-medium line-clamp-2 mb-2">{item.caption}</p>
-                        {item.category && (
-                          <span className="inline-block text-xs bg-gray-100 px-3 py-1 rounded-full mb-3">
-                            {item.category}
-                          </span>
-                        )}
                         <div className="flex gap-3 mt-4">
                           <button 
                             onClick={() => handleEditGallery(item)}
@@ -484,7 +678,7 @@ export default function AdminDashboard() {
                         <td className="p-4">{reg.age_range}</td>
                         <td className="p-4">{reg.visitor_category}</td>
                         <td className="p-4">{reg.state_of_residence}</td>
-                        <td className="p-4 text-sm">{new Date(reg.registration_date).toLocaleDateString()}</td>
+                        <td className="p-4 text-sm">{fmtDate(reg.registration_date)}</td>
                         <td className="p-4 text-center">
                           <button onClick={(e) => { e.stopPropagation(); setSelectedItem(reg); setDetailType('registration'); setShowDetailModal(true); }} className="text-emerald-600 hover:text-emerald-700"><Eye size={18} /></button>
                         </td>
@@ -531,7 +725,7 @@ export default function AdminDashboard() {
                         <td className="p-3 text-center font-bold">{s.familiarity_score}/5</td>
                         <td className="p-3 truncate">{s.biggest_challenge}</td>
                         <td className="p-3">{s.would_participate}</td>
-                        <td className="p-3 text-xs">{new Date(s.submitted_at).toLocaleDateString()}</td>
+                        <td className="p-3 text-xs">{fmtDate(s.submitted_at)}</td>
                         <td className="p-3 text-center">
                           <button onClick={(e) => { e.stopPropagation(); setSelectedItem(s); setDetailType('survey'); setShowDetailModal(true); }} className="text-emerald-600 hover:text-emerald-700"><Eye size={18} /></button>
                         </td>
@@ -557,14 +751,18 @@ export default function AdminDashboard() {
               {/* Product form content (same as before) */}
               <div className="space-y-5">
                 <input type="text" placeholder="Product Name *" value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full border border-black p-4" />
-                <input type="text" placeholder="Category *" value={productCategory} onChange={(e) => setProductCategory(e.target.value)} className="w-full border border-black p-4" />
+                <input type="text" placeholder="Category" value={productCategory} onChange={(e) => setProductCategory(e.target.value)} className="w-full border border-black p-4" />
                 <input type="number" placeholder="Price (₦) *" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} className="w-full border border-black p-4" />
-                
+                <input type="number" placeholder="Quantity" value={productQuantity} onChange={(e) => setProductQuantity(e.target.value)} className="w-full border border-black p-4" />
+
                 <div>
                   <label className="block mb-2 font-medium">Product Image</label>
                   <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setProductImagePreview(URL.createObjectURL(file));
+                    if (file) {
+                      setProductImageFile(file);
+                      setProductImagePreview(URL.createObjectURL(file));
+                    }
                   }} className="w-full border border-black p-3" />
                   {productImagePreview && <img src={productImagePreview} alt="preview" className="mt-4 h-48 object-cover" />}
                 </div>
@@ -592,23 +790,20 @@ export default function AdminDashboard() {
 
               <div className="space-y-5">
                 <input type="text" placeholder="Service Title *" value={serviceTitle} onChange={(e) => setServiceTitle(e.target.value)} className="w-full border border-black p-4" />
-                <input type="text" placeholder="Link (URL)" value={serviceHref} onChange={(e) => setServiceHref(e.target.value)} className="w-full border border-black p-4" />
 
                 <div>
                   <label className="block mb-2 font-medium">Service Image</label>
                   <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setServiceImagePreview(URL.createObjectURL(file));
+                    if (file) {
+                      setServiceImageFile(file);
+                      setServiceImagePreview(URL.createObjectURL(file));
+                    }
                   }} className="w-full border border-black p-3" />
                   {serviceImagePreview && <img src={serviceImagePreview} alt="preview" className="mt-4 h-40 object-cover" />}
                 </div>
 
                 <textarea placeholder="Description" rows={4} value={serviceDescription} onChange={(e) => setServiceDescription(e.target.value)} className="w-full border border-black p-4" />
-
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={serviceExternal} onChange={(e) => setServiceExternal(e.target.checked)} />
-                  Open in new tab (External Link)
-                </label>
 
                 <button onClick={handleSaveService} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 font-bold">
                   {editingService ? 'Update Service' : 'Save Service'}
@@ -634,34 +829,29 @@ export default function AdminDashboard() {
               <div className="space-y-5">
                 <div>
                   <label className="block mb-2 font-medium">Image</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) setGalleryImagePreview(URL.createObjectURL(file));
-                    }} 
-                    className="w-full border border-black p-3" 
+                      if (file) {
+                        setGalleryImageFile(file);
+                        setGalleryImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="w-full border border-black p-3"
                   />
                   {galleryImagePreview && (
                     <img src={galleryImagePreview} alt="preview" className="mt-4 h-48 object-cover border border-black" />
                   )}
                 </div>
 
-                <input 
-                  type="text" 
-                  placeholder="Caption *" 
-                  value={galleryCaption} 
-                  onChange={(e) => setGalleryCaption(e.target.value)} 
-                  className="w-full border border-black p-4" 
-                />
-
-                <input 
-                  type="text" 
-                  placeholder="Category (optional)" 
-                  value={galleryCategory} 
-                  onChange={(e) => setGalleryCategory(e.target.value)} 
-                  className="w-full border border-black p-4" 
+                <input
+                  type="text"
+                  placeholder="Caption *"
+                  value={galleryCaption}
+                  onChange={(e) => setGalleryCaption(e.target.value)}
+                  className="w-full border border-black p-4"
                 />
 
                 <button 
@@ -729,11 +919,11 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 font-bold">VISIT DATE</p>
-                      <p className="text-lg">{new Date((selectedItem as Registration).visit_date).toLocaleDateString()}</p>
+                      <p className="text-lg">{fmtDate((selectedItem as Registration).visit_date)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 font-bold">REGISTRATION DATE</p>
-                      <p className="text-lg">{new Date((selectedItem as Registration).registration_date).toLocaleDateString()}</p>
+                      <p className="text-lg">{fmtDate((selectedItem as Registration).registration_date)}</p>
                     </div>
                   </div>
                   <div>
@@ -786,7 +976,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 font-bold">Visit Date</p>
-                        <p className="text-sm">{new Date((selectedItem as SurveyResponse).visit_date).toLocaleDateString()}</p>
+                        <p className="text-sm">{fmtDate((selectedItem as SurveyResponse).visit_date)}</p>
                       </div>
                     </div>
                     <div className="mt-4">
@@ -906,7 +1096,7 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="text-right text-xs text-gray-500">
-                    Submitted: {new Date((selectedItem as SurveyResponse).submitted_at).toLocaleString()}
+                    Submitted: {fmtDateTime((selectedItem as SurveyResponse).submitted_at)}
                   </div>
                 </div>
               )}

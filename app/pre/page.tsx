@@ -53,17 +53,18 @@ export default function ServicesPage() {
           throw new Error('Failed to fetch services');
         }
 
-        const fetchedServices: Service[] = await response.json();
+        const fetchedServices: any[] = await response.json();
 
-        const mergedServices = [
-          ...internalServices,
-          ...fetchedServices.map((service) => ({
-            ...service,
-            external: true,        
-          })),
-        ];
+        const mappedFromApi: Service[] = (fetchedServices || []).map((s) => ({
+          id: String(s.id),
+          title: s.name || '',
+          description: s.description || '',
+          imageSrc: s.image || '/placeholder.jpg',
+          href: '#',
+          external: false,
+        }));
 
-        setServices(mergedServices);
+        setServices([...internalServices, ...mappedFromApi]);
       } catch (err) {
         console.error('Error fetching services:', err);
         setError(null);
