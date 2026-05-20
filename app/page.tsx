@@ -389,7 +389,7 @@ export default function SurveyPage() {
         visit_date: visitDate,
         registration_date: new Date().toISOString(),
       };
-      const res = await fetch("/api/registration", {
+      const res = await fetch("/FMYDHUB/api/registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -449,7 +449,7 @@ export default function SurveyPage() {
         submitted_at: new Date().toISOString(),
       };
 
-      const res = await fetch("/api/survey", {
+      const res = await fetch("/FMYDHUB/api/survey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

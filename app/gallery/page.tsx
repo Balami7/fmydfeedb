@@ -22,7 +22,7 @@ export default function GalleryPage() {
     async function fetchGallery() {
       try {
         setLoading(true);
-        const response = await fetch('/api/gallery', {
+        const response = await fetch('/FMYDHUB/api/gallery', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store',

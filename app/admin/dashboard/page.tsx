@@ -95,7 +95,7 @@ export default function AdminDashboard() {
     }
 
     const controller = new AbortController();
-    fetch("/api/admin/dashboard", {
+    fetch("/FMYDHUB/api/admin/dashboard", {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,

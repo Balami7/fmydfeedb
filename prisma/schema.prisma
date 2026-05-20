@@ -50,30 +50,56 @@ model Service {
 }
 
 model Registration {
-  id         String   @id @default(cuid())
-  name       String
-  email      String
-  phone      String
-  age        String?
-  occupation String?
-  state      String?
-  lga        String?
-  address    String?
-  gender     String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  email            String
+  phone            String
+  age              String?
+  occupation       String?
+  visitor_category String?
+  state            String?
+  lga              String?
+  address          String?
+  gender           String?
+  visit_date       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model SurveyResponse {
-  id              String   @id @default(cuid())
-  registrationId  String?
-  awareness       String?
-  priorities      String?
-  challenges      String?
-  inclusion       String?
-  accessibility   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                         String   @id @default(cuid())
+  full_name                  String?
+  email                      String?
+  phone                      String?
+  age_range                  String?
+  occupation                 String?
+  visitor_category           String?
+  state_of_residence         String?
+  lga                        String?
+  home_address               String?
+  gender                     String?
+  visit_date                 String?
+  heard_of_ministry          String?
+  aware_programmes           String?
+  familiarity_score          Int?
+  priority_areas             String?
+  opportunities_opinion      String?
+  most_interesting_programme String?
+  programme_to_expand        String?
+  improvements               String?
+  new_initiatives            String?
+  biggest_challenge          String?
+  challenge_solutions        String?
+  program_types_interest     String?
+  would_participate          String?
+  has_disability             String?
+  disability_details         String?
+  accommodation_support      String?
+  anything_else              String?
+  comments                   String?
+  submitted_at               String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 }
 
 model Order {

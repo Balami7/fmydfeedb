@@ -4,10 +4,16 @@ import { hashPassword } from "@/lib/auth";
 async function main() {
   console.log("🔧 Starting database setup...");
 
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env");
+  }
+
   try {
-    // Check if admin user already exists
     const existingAdmin = await prisma.user.findUnique({
-      where: { email: "admin@example.com" },
+      where: { email: adminEmail },
     });
 
     if (existingAdmin) {
@@ -15,19 +21,16 @@ async function main() {
       return;
     }
 
-    // Create default admin user
     const admin = await prisma.user.create({
       data: {
-        email: "admin@example.com",
-        password: hashPassword("admin123"), // CHANGE THIS IN PRODUCTION!
+        email: adminEmail,
+        password: hashPassword(adminPassword),
         role: "admin",
       },
     });
 
     console.log("✅ Admin user created successfully");
     console.log(`   Email: ${admin.email}`);
-    console.log(`   Password: admin123`);
-    console.log(`   ⚠️  IMPORTANT: Change this password in production!`);
 
     // Add sample products
     const products = await Promise.all([

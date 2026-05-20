@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /Users/adeboyebello/node_modules/@tailwindcss/postcss/package.json | grep '\"main\"\\\\|\"exports\"\\\\|\"module\"' | head -10)",
+      "Read(//Users/adeboyebello/node_modules/@tailwindcss/postcss/**)"
+    ]
+  }
+}

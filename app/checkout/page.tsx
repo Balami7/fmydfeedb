@@ -86,7 +86,7 @@ export default function CheckoutPage() {
     }
 
     try {
-      const response = await fetch('/api/orders', {
+      const response = await fetch('/FMYDHUB/api/orders', {
         method: 'POST',
         body: formData,
       });

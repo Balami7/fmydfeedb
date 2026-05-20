@@ -45,7 +45,7 @@ export default function MarketplacePage() {
     async function fetchProducts() {
       try {
         setLoading(true);
-        const response = await fetch('/api/products', {
+        const response = await fetch('/FMYDHUB/api/products', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store',           
@@ -331,12 +331,18 @@ export default function MarketplacePage() {
                     onClick={() => setSelectedProduct(product)}
                     className="relative h-[150px] bg-gray-50 overflow-hidden"
                   >
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
+                        No image
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3">

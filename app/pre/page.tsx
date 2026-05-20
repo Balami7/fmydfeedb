@@ -43,7 +43,7 @@ export default function ServicesPage() {
 
     async function fetchServices() {
       try {
-        const response = await fetch('/api/services', {
+        const response = await fetch('/FMYDHUB/api/services', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store',
