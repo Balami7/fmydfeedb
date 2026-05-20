@@ -38,6 +38,12 @@ async function saveToDisk(file: File, subdirectory: string): Promise<string> {
   return `/uploads/${subdirectory}${subdirectory ? "/" : ""}${filename}`;
 }
 
+async function saveAsDataUrl(file: File): Promise<string> {
+  const buf = Buffer.from(await file.arrayBuffer());
+  const mime = file.type || "application/octet-stream";
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
 export async function saveFile(
   file: File,
   subdirectory: string = ""
@@ -58,18 +64,22 @@ export async function saveFile(
       return await saveToBlob(file, subdirectory);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (isServerless) {
-        throw new Error(`Image upload failed (Vercel Blob): ${msg}`);
-      }
-      console.warn("Vercel Blob upload failed, falling back to disk:", msg);
+      console.warn("Vercel Blob upload failed, using data-URL fallback:", msg);
+      return saveAsDataUrl(file);
     }
-  } else if (isServerless) {
-    throw new Error(
-      "Image upload failed: BLOB_READ_WRITE_TOKEN is not set on the server. " +
-      "Add it in Vercel → Project → Settings → Environment Variables, then redeploy."
-    );
   }
-  return saveToDisk(file, subdirectory);
+
+  if (isServerless) {
+    return saveAsDataUrl(file);
+  }
+
+  try {
+    return await saveToDisk(file, subdirectory);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("Disk upload failed, using data-URL fallback:", msg);
+    return saveAsDataUrl(file);
+  }
 }
 
 export async function handleFileUpload(
