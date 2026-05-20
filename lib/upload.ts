@@ -49,7 +49,14 @@ export async function saveFile(
   }
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
-    return saveToBlob(file, subdirectory);
+    try {
+      return await saveToBlob(file, subdirectory);
+    } catch (err) {
+      console.warn(
+        "Vercel Blob upload failed, falling back to local disk:",
+        err instanceof Error ? err.message : err
+      );
+    }
   }
   return saveToDisk(file, subdirectory);
 }
