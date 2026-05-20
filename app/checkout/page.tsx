@@ -237,15 +237,15 @@ export default function CheckoutPage() {
                 <label className={`block border p-4 cursor-pointer transition-all ${paymentMethod === 'transfer' ? 'border-green-600 bg-green-50' : 'border-black'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" name="payment" checked={paymentMethod === 'transfer'} onChange={() => setPaymentMethod('transfer')} />
-                    <span className="font-bold">Bank Transfer</span>
+                    <span className="font-bold">Bank Transfer(unavailable)</span>
                   </div>
 
                   {paymentMethod === 'transfer' && (
                     <div className="mt-4 text-sm space-y-4">
                       <div className="border border-black p-4 bg-gray-50 text-sm">
-                        <p><strong>Bank:</strong> First Bank</p>
-                        <p><strong>Account Name:</strong> FMYD Marketplace Ltd</p>
-                        <p><strong>Account Number:</strong> 0123456789</p>
+                        <p><strong>Bank:</strong> unavailable</p>
+                        <p><strong>Account Name:</strong> unavailable</p>
+                        <p><strong>Account Number:</strong> unavailable</p>
                       </div>
 
                       <div>
