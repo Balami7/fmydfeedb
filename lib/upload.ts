@@ -1,9 +1,12 @@
 import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { join, isAbsolute, resolve } from "path";
 import { existsSync } from "fs";
 import { put } from "@vercel/blob";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+const RAW_UPLOAD_DIR = process.env.UPLOAD_DIR || "public/uploads";
+const UPLOAD_DIR = isAbsolute(RAW_UPLOAD_DIR)
+  ? RAW_UPLOAD_DIR
+  : resolve(process.cwd(), RAW_UPLOAD_DIR);
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || "5242880"); // 5MB
 
 function randomName(originalName: string): string {
@@ -48,15 +51,23 @@ export async function saveFile(
     throw new Error("Only image files are allowed");
   }
 
+  const isServerless = !!process.env.VERCEL;
+
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
       return await saveToBlob(file, subdirectory);
     } catch (err) {
-      console.warn(
-        "Vercel Blob upload failed, falling back to local disk:",
-        err instanceof Error ? err.message : err
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      if (isServerless) {
+        throw new Error(`Image upload failed (Vercel Blob): ${msg}`);
+      }
+      console.warn("Vercel Blob upload failed, falling back to disk:", msg);
     }
+  } else if (isServerless) {
+    throw new Error(
+      "Image upload failed: BLOB_READ_WRITE_TOKEN is not set on the server. " +
+      "Add it in Vercel → Project → Settings → Environment Variables, then redeploy."
+    );
   }
   return saveToDisk(file, subdirectory);
 }
