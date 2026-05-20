@@ -45,6 +45,8 @@ model Service {
   name        String
   description String?
   image       String?
+  href        String?
+  external    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

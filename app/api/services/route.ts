@@ -7,6 +7,8 @@ import { z } from "zod";
 const serviceSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  href: z.string().optional(),
+  external: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -30,8 +32,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
+    const href = (formData.get("href") as string) || undefined;
+    const external = formData.get("external") === "true";
 
-    const data = { name, description };
+    const data = { name, description, href, external };
     serviceSchema.parse(data);
 
     let image: string | undefined;
@@ -72,8 +76,10 @@ export async function PUT(request: NextRequest) {
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
+    const href = (formData.get("href") as string) || undefined;
+    const external = formData.get("external") === "true";
 
-    const data = { name, description };
+    const data = { name, description, href, external };
     serviceSchema.parse(data);
 
     const updateData: any = data;

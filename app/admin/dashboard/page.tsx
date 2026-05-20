@@ -22,6 +22,8 @@ interface Service {
   title: string;
   description: string;
   imageSrc: string;
+  href: string;
+  external: boolean;
 }
 
 interface GalleryItem {
@@ -136,6 +138,8 @@ export default function AdminDashboard() {
   const [serviceDescription, setServiceDescription] = useState('');
   const [serviceImageFile, setServiceImageFile] = useState<File | null>(null);
   const [serviceImagePreview, setServiceImagePreview] = useState('');
+  const [serviceHref, setServiceHref] = useState('');
+  const [serviceExternal, setServiceExternal] = useState(false);
 
   // Gallery Modal
   const [showGalleryModal, setShowGalleryModal] = useState(false);
@@ -181,6 +185,8 @@ export default function AdminDashboard() {
         title: s.name || "",
         description: s.description || "",
         imageSrc: s.image || "",
+        href: s.href || "",
+        external: !!s.external,
       })));
 
       setGallery((d.galleries || []).map((g: any) => ({
@@ -333,6 +339,8 @@ export default function AdminDashboard() {
     setServiceDescription(s.description);
     setServiceImageFile(null);
     setServiceImagePreview(s.imageSrc);
+    setServiceHref(s.href || '');
+    setServiceExternal(!!s.external);
     setShowServiceModal(true);
   };
   const handleDeleteService = async (id: string) => {
@@ -356,6 +364,8 @@ export default function AdminDashboard() {
     if (editingService) fd.append("id", editingService.id);
     fd.append("name", serviceTitle);
     fd.append("description", serviceDescription || "");
+    fd.append("href", serviceHref || "");
+    fd.append("external", serviceExternal ? "true" : "false");
     if (serviceImageFile) fd.append("image", serviceImageFile);
     const res = await fetch("/FMYDHUB/api/services", {
       method: editingService ? "PUT" : "POST",
@@ -372,7 +382,8 @@ export default function AdminDashboard() {
   };
   const resetServiceForm = () => {
     setServiceTitle(''); setServiceDescription(''); setServiceImageFile(null);
-    setServiceImagePreview(''); setEditingService(null); setShowServiceModal(false);
+    setServiceImagePreview(''); setServiceHref(''); setServiceExternal(false);
+    setEditingService(null); setShowServiceModal(false);
   };
 
   // Gallery Functions
@@ -790,6 +801,7 @@ export default function AdminDashboard() {
 
               <div className="space-y-5">
                 <input type="text" placeholder="Service Title *" value={serviceTitle} onChange={(e) => setServiceTitle(e.target.value)} className="w-full border border-black p-4" />
+                <input type="text" placeholder="Link (URL)" value={serviceHref} onChange={(e) => setServiceHref(e.target.value)} className="w-full border border-black p-4" />
 
                 <div>
                   <label className="block mb-2 font-medium">Service Image</label>
@@ -804,6 +816,11 @@ export default function AdminDashboard() {
                 </div>
 
                 <textarea placeholder="Description" rows={4} value={serviceDescription} onChange={(e) => setServiceDescription(e.target.value)} className="w-full border border-black p-4" />
+
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={serviceExternal} onChange={(e) => setServiceExternal(e.target.checked)} />
+                  Open in new tab (External Link)
+                </label>
 
                 <button onClick={handleSaveService} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 font-bold">
                   {editingService ? 'Update Service' : 'Save Service'}

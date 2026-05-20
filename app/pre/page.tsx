@@ -60,8 +60,8 @@ export default function ServicesPage() {
           title: s.name || '',
           description: s.description || '',
           imageSrc: s.image || '/placeholder.jpg',
-          href: '#',
-          external: false,
+          href: s.href || '#',
+          external: !!s.external,
         }));
 
         setServices([...internalServices, ...mappedFromApi]);
